@@ -58,9 +58,12 @@ def extract_file(path: Path) -> int:
     return count
 
 
-def extract_directory(path: Path) -> int:
+def extract_directory(path: Path, on_extract=None) -> int:
     """Recursively extract mermaid blocks from all .md files. Returns total count."""
     total = 0
     for md_file in sorted(path.rglob("*.md")):
-        total += extract_file(md_file)
+        count = extract_file(md_file)
+        if count and on_extract:
+            on_extract(md_file, count)
+        total += count
     return total

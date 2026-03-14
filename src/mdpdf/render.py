@@ -58,10 +58,12 @@ def render_diagram(mmd_path: Path, config_dir: Path) -> Path:
     return output_pdf
 
 
-def render_all_diagrams(target_path: Path, config_dir: Path) -> int:
+def render_all_diagrams(target_path: Path, config_dir: Path, on_render=None) -> int:
     """Find and render all .mmd files under target_path. Returns count."""
     count = 0
     for mmd_file in sorted(target_path.rglob("*.mmd")):
-        render_diagram(mmd_file, config_dir)
+        result = render_diagram(mmd_file, config_dir)
+        if on_render:
+            on_render(result)
         count += 1
     return count

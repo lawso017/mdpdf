@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-extra \
     fonts-noto-color-emoji \
     chromium \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && luaotfload-tool --update
 
 # Mermaid CLI
 RUN npm install -g @mermaid-js/mermaid-cli
@@ -42,4 +43,4 @@ COPY tests/ tests/
 
 WORKDIR /workspace
 
-ENTRYPOINT ["uv", "--directory", "/opt/mdpdf", "run", "mdpdf"]
+ENTRYPOINT ["uv", "run", "--project", "/opt/mdpdf", "mdpdf"]

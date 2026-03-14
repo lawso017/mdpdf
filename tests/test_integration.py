@@ -26,22 +26,8 @@ def workspace(tmp_path):
 
 def _run_mdpdf(workspace, *args):
     """Run mdpdf CLI in the workspace."""
-    cmd = ["uv", "--directory", "/opt/mdpdf", "run", "mdpdf"]
-    args = list(args)
-
-    if "--file" in args:
-        # --file is a flag; the next arg is the positional PATH (file path)
-        idx = args.index("--file")
-        args[idx + 1] = str(workspace / args[idx + 1])
-    elif args and not args[0].startswith("-"):
-        # First positional arg is a subdirectory
-        args[0] = str(workspace / args[0])
-    else:
-        # No positional path — append workspace as default target
-        args.append(str(workspace))
-
-    cmd.extend(args)
-    return subprocess.run(cmd, capture_output=True, text=True)
+    cmd = ["uv", "run", "--project", "/opt/mdpdf", "mdpdf"] + list(args)
+    return subprocess.run(cmd, cwd=str(workspace), capture_output=True, text=True)
 
 
 def test_full_pipeline(workspace):

@@ -10,7 +10,7 @@ test-integration: ## Run integration tests (requires Docker)
 		-v $(PWD)/tests:/opt/mdpdf/tests \
 		--entrypoint uv \
 		$(IMAGE) \
-		--directory /opt/mdpdf run pytest tests/test_integration.py -v -m integration
+		run --project /opt/mdpdf pytest /opt/mdpdf/tests/test_integration.py -v -m integration
 
 test-all: test test-integration ## Run all tests
 
@@ -23,6 +23,5 @@ build: ## Build image locally from source
 push: ## Build multi-arch image and push to ghcr
 	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMAGE) --push .
 
-install: ## Install wrapper to /usr/local/bin (pull or build first)
-	cp mdpdf-wrapper /usr/local/bin/mdpdf
-	chmod +x /usr/local/bin/mdpdf
+install: build ## Build image and install wrapper to /usr/local/bin
+	sudo install -m 755 mdpdf-wrapper /usr/local/bin/mdpdf

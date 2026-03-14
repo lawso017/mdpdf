@@ -34,7 +34,7 @@ def convert_file(md_path: Path, output_dir: Path, config_dir: Path) -> Path:
 
 
 def convert_directory(
-    target_path: Path, output_dir: Path, config_dir: Path
+    target_path: Path, output_dir: Path, config_dir: Path, on_convert=None
 ) -> int:
     """Convert all .md files recursively, mirroring directory structure. Returns count."""
     count = 0
@@ -48,6 +48,8 @@ def convert_directory(
         rel_dir = rel.parent
         file_output_dir = output_dir / rel_dir if rel_dir != Path(".") else output_dir
 
-        convert_file(md_file, file_output_dir, config_dir)
+        result = convert_file(md_file, file_output_dir, config_dir)
+        if on_convert:
+            on_convert(result)
         count += 1
     return count

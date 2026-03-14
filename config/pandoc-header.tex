@@ -1,18 +1,15 @@
-\usepackage{fontspec}
+% Font fallback configuration for Unicode symbols
+\directlua{
+  luaotfload.add_fallback("notofallback", {
+    "NotoSansSymbols:mode=harf;",
+    "NotoSansSymbols2:mode=harf;",
+    "NotoColorEmoji:mode=harf;",
+  })
+}
 
-% Font fallback chain for Unicode coverage
-\setmainfont{Noto Sans}[
-  BoldFont={Noto Sans Bold},
-  ItalicFont={Noto Sans Italic},
-  BoldItalicFont={Noto Sans Bold Italic}
-]
+\setmainfont{Noto Sans}[RawFeature={fallback=notofallback}]
+\setsansfont{Noto Sans}[RawFeature={fallback=notofallback}]
 
-% Symbol fallback via Noto Symbols
-\newfontfamily\symbolsfont{Noto Sans Symbols}
-\newfontfamily\symbolstwofont{Noto Sans Symbols 2}
-\newfontfamily\emojifont{Noto Color Emoji}[Renderer=HarfBuzz]
-
-% Compact tables
+% Compact tables: 8pt font + tighter column padding to prevent overlap
 \usepackage{etoolbox}
-\AtBeginEnvironment{longtable}{\footnotesize}
-\setlength{\tabcolsep}{3pt}
+\AtBeginEnvironment{longtable}{\footnotesize\setlength{\tabcolsep}{3pt}}
