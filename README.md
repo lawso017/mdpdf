@@ -51,6 +51,7 @@ mdpdf --clean
 
 - **Extracts** inline mermaid code blocks from `.md` files into separate `.mmd` files in a `diagrams/` subdirectory
 - **Renders** `.mmd` diagrams to PDF via mmdc (SVG) with tspan fix and rsvg-convert (PDF)
+- **Replaces** extracted mermaid code blocks with links to newly-rendered PDF diagrams for inline rendering
 - **Converts** `.md` files to PDF via pandoc with LuaLaTeX, Noto fonts, and TOC
 
 ## Config
