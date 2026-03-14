@@ -1,0 +1,18 @@
+\usepackage{fontspec}
+
+% Font fallback chain for Unicode coverage
+\setmainfont{Noto Sans}[
+  BoldFont={Noto Sans Bold},
+  ItalicFont={Noto Sans Italic},
+  BoldItalicFont={Noto Sans Bold Italic}
+]
+
+% Symbol fallback via Noto Symbols
+\newfontfamily\symbolsfont{Noto Sans Symbols}
+\newfontfamily\symbols2font{Noto Sans Symbols 2}
+\newfontfamily\emojifont{Noto Color Emoji}[Renderer=HarfBuzz]
+
+% Compact tables
+\usepackage{etoolbox}
+\AtBeginEnvironment{longtable}{\footnotesize}
+\setlength{\tabcolsep}{3pt}

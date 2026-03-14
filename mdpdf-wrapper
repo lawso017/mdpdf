@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IMAGE="mdpdf:latest"
+docker run --rm -v "$(pwd):/workspace" -w /workspace "$IMAGE" "$@"
