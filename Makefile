@@ -1,20 +1,28 @@
-.PHONY: test test-integration test-all build install
+.PHONY: test test-integration test-all build push install pull
+
+IMAGE := ghcr.io/lawso017/mdpdf:latest
 
 test: ## Run unit tests (no Docker needed)
 	uv run pytest tests/ -v --ignore=tests/test_integration.py
 
-test-integration: build ## Run integration tests (requires Docker)
+test-integration: ## Run integration tests (requires Docker)
 	docker run --rm \
 		-v $(PWD)/tests:/opt/mdpdf/tests \
 		--entrypoint uv \
-		mdpdf:latest \
+		$(IMAGE) \
 		--directory /opt/mdpdf run pytest tests/test_integration.py -v -m integration
 
 test-all: test test-integration ## Run all tests
 
-build: ## Build Docker image
-	docker build -t mdpdf:latest .
+pull: ## Pull image from ghcr
+	docker pull $(IMAGE)
 
-install: build ## Build image and install wrapper to /usr/local/bin
+build: ## Build image locally from source
+	docker build -t $(IMAGE) .
+
+push: ## Build multi-arch image and push to ghcr
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMAGE) --push .
+
+install: ## Install wrapper to /usr/local/bin (pull or build first)
 	cp mdpdf-wrapper /usr/local/bin/mdpdf
 	chmod +x /usr/local/bin/mdpdf

@@ -6,12 +6,22 @@ Converts Markdown documents to high-quality PDFs using pandoc + LuaLaTeX, with a
 
 ## Installation
 
+### macOS / Linux
+
 ```bash
+git clone <repo> ~/dev/mdpdf
 cd ~/dev/mdpdf
-make install
+make pull      # pull pre-built image from ghcr (or: make build)
+make install   # copies wrapper to /usr/local/bin
 ```
 
-This builds the Docker image and copies the `mdpdf` wrapper to `/usr/local/bin/`.
+### Windows
+
+```powershell
+docker pull ghcr.io/lawso017/mdpdf:latest
+# Copy mdpdf.cmd to a directory on your PATH (e.g. C:\Users\<you>\bin\)
+copy mdpdf.cmd C:\Users\<you>\bin\
+```
 
 ## Usage
 
@@ -64,6 +74,9 @@ make test-integration
 # Run all tests
 make test-all
 
-# Build Docker image only
+# Build Docker image locally
 make build
+
+# Pull pre-built image from ghcr
+make pull
 ```

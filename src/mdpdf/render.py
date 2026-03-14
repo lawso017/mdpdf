@@ -2,6 +2,8 @@ import re
 import subprocess
 from pathlib import Path
 
+from mdpdf.config import _BUNDLED_CONFIG
+
 # tspan fix: remove x= attributes from tspan elements that cause misalignment
 TSPAN_X_RE = re.compile(r'(<tspan[^>]*?) x="[^"]*"')
 
@@ -20,16 +22,20 @@ def render_diagram(mmd_path: Path, config_dir: Path) -> Path:
     fixed_svg = parent / f"{stem}-fixed.svg"
     output_pdf = parent / f"{stem}.pdf"
     mermaid_config = config_dir / "mermaid.config.json"
+    # Puppeteer config is Docker infrastructure — check user config first, then bundled
+    puppeteer_config = config_dir / "puppeteer.json"
+    if not puppeteer_config.exists():
+        puppeteer_config = _BUNDLED_CONFIG / "puppeteer.json"
 
     try:
         # Step 1: mmdc → SVG
-        subprocess.run(
-            [
-                "mmdc", "-i", str(mmd_path), "-o", str(tmp_svg),
-                "-e", "svg", "-b", "white", "-c", str(mermaid_config),
-            ],
-            check=True,
-        )
+        mmdc_cmd = [
+            "mmdc", "-i", str(mmd_path), "-o", str(tmp_svg),
+            "-e", "svg", "-b", "white", "-c", str(mermaid_config),
+        ]
+        if puppeteer_config.exists():
+            mmdc_cmd.extend(["-p", str(puppeteer_config)])
+        subprocess.run(mmdc_cmd, check=True)
 
         # Step 2: tspan post-process
         svg_content = tmp_svg.read_text()

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-IMAGE="mdpdf:latest"
+IMAGE="ghcr.io/lawso017/mdpdf:latest"
 docker run --rm -v "$(pwd):/workspace" -w /workspace "$IMAGE" "$@"
