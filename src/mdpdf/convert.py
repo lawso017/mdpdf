@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 
+from mdpdf.config import bundled_config
 from mdpdf.naming import to_kebab
 
 SKIP_DIRS = {"pdf", ".config", "diagrams", "__pycache__", ".git", "node_modules"}
@@ -12,6 +13,8 @@ def convert_file(md_path: Path, output_dir: Path, config_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / output_name
     header_path = config_dir / "pandoc-header.tex"
+    if not header_path.exists():
+        header_path = bundled_config() / "pandoc-header.tex"
 
     subprocess.run(
         [

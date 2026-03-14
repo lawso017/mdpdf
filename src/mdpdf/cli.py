@@ -86,7 +86,10 @@ def main(path: str, file_mode: bool, clean_mode: bool, extract_only: bool, no_ex
                     on_render=lambda p: _item(">", _rel(p, target.parent)))
 
             _step("Converting to PDF")
-            result = convert_file(target, target.parent / "pdf", config_dir)
+            cwd = Path.cwd()
+            rel_dir = target.parent.relative_to(cwd)
+            output_dir = cwd / "pdf" / rel_dir
+            result = convert_file(target, output_dir, config_dir)
             _item(">", _rel(result, target.parent))
     else:
         if not target.is_dir():
@@ -108,7 +111,9 @@ def main(path: str, file_mode: bool, clean_mode: bool, extract_only: bool, no_ex
                 _item(".", "No diagrams to render")
 
             _step("Converting to PDF")
-            output_dir = target / "pdf"
+            cwd = Path.cwd()
+            rel_dir = target.relative_to(cwd)
+            output_dir = cwd / "pdf" / rel_dir
             converted = convert_directory(target, output_dir, config_dir,
                 on_convert=lambda p: _item(">", _rel(p, target)))
             if converted == 0:

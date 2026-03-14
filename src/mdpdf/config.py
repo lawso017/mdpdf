@@ -5,6 +5,11 @@ _PACKAGE_DIR = Path(__file__).resolve().parent
 _BUNDLED_CONFIG = _PACKAGE_DIR.parent.parent / "config"
 
 
+def bundled_config() -> Path:
+    """Return the path to the bundled config directory."""
+    return _BUNDLED_CONFIG
+
+
 def find_config(target_path: Path, root: Path = Path("/workspace")) -> Path:
     """Search upward from target_path for .config/ with mermaid.config.json.
 
