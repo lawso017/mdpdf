@@ -24,7 +24,6 @@ def convert_file(md_path: Path, output_dir: Path, config_dir: Path) -> Path:
             "-H", str(header_path),
             "-V", "geometry:margin=1in",
             "-V", "fontsize=11pt",
-            "-V", "monofont=Noto Sans Mono",
             "-V", "colorlinks=true",
             "-V", "linkcolor=blue",
             "--toc",
