@@ -16,7 +16,7 @@ def convert_file(md_path: Path, output_dir: Path, config_dir: Path) -> Path:
     if not header_path.exists():
         header_path = bundled_config() / "pandoc-header.tex"
 
-    subprocess.run(
+    result = subprocess.run(
         [
             "pandoc", str(md_path),
             "-o", str(output_path),
@@ -28,9 +28,15 @@ def convert_file(md_path: Path, output_dir: Path, config_dir: Path) -> Path:
             "-V", "linkcolor=blue",
             "--toc",
         ],
-        check=True,
+        capture_output=True,
+        text=True,
         cwd=str(md_path.parent),
     )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"pandoc failed (exit {result.returncode}) for {md_path}\n"
+            f"stderr:\n{result.stderr}"
+        )
 
     return output_path
 
