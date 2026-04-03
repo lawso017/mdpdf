@@ -3,11 +3,12 @@ FROM node:22-slim
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-# Minimal system packages — no texlive-fonts-extra or texlive-latex-extra
+# Minimal system packages — avoid texlive-fonts-extra and texlive-latex-extra
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pandoc \
     texlive-luatex \
     texlive-latex-recommended \
+    texlive-plain-generic \
     librsvg2-bin \
     fontconfig \
     fonts-noto \
