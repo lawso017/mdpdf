@@ -7,7 +7,7 @@ from mdpdf.naming import to_kebab
 SKIP_DIRS = {"pdf", ".config", "diagrams", "__pycache__", ".git", "node_modules"}
 
 
-def convert_file(md_path: Path, output_dir: Path, config_dir: Path) -> Path:
+def convert_file(md_path: Path, output_dir: Path, config_dir: Path, *, toc: bool = True) -> Path:
     """Convert one markdown file to PDF via pandoc. Returns output path."""
     output_name = to_kebab(md_path.stem) + ".pdf"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -16,18 +16,21 @@ def convert_file(md_path: Path, output_dir: Path, config_dir: Path) -> Path:
     if not header_path.exists():
         header_path = bundled_config() / "pandoc-header.tex"
 
+    cmd = [
+        "pandoc", str(md_path),
+        "-o", str(output_path),
+        "--pdf-engine=lualatex",
+        "-H", str(header_path),
+        "-V", "geometry:margin=1in",
+        "-V", "fontsize=11pt",
+        "-V", "colorlinks=true",
+        "-V", "linkcolor=blue",
+    ]
+    if toc:
+        cmd.append("--toc")
+
     result = subprocess.run(
-        [
-            "pandoc", str(md_path),
-            "-o", str(output_path),
-            "--pdf-engine=lualatex",
-            "-H", str(header_path),
-            "-V", "geometry:margin=1in",
-            "-V", "fontsize=11pt",
-            "-V", "colorlinks=true",
-            "-V", "linkcolor=blue",
-            "--toc",
-        ],
+        cmd,
         capture_output=True,
         text=True,
         cwd=str(md_path.parent),
@@ -42,7 +45,7 @@ def convert_file(md_path: Path, output_dir: Path, config_dir: Path) -> Path:
 
 
 def convert_directory(
-    target_path: Path, output_dir: Path, config_dir: Path, on_convert=None
+    target_path: Path, output_dir: Path, config_dir: Path, on_convert=None, *, toc: bool = True
 ) -> int:
     """Convert all .md files recursively, mirroring directory structure. Returns count."""
     count = 0
@@ -56,7 +59,7 @@ def convert_directory(
         rel_dir = rel.parent
         file_output_dir = output_dir / rel_dir if rel_dir != Path(".") else output_dir
 
-        result = convert_file(md_file, file_output_dir, config_dir)
+        result = convert_file(md_file, file_output_dir, config_dir, toc=toc)
         if on_convert:
             on_convert(result)
         count += 1

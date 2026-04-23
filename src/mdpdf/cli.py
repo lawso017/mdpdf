@@ -54,7 +54,8 @@ def _clean(target: Path) -> None:
 @click.option("--clean", "clean_mode", is_flag=True, help="Remove generated artifacts")
 @click.option("--extract-only", is_flag=True, help="Only extract mermaid diagrams")
 @click.option("--no-extract", is_flag=True, help="Skip mermaid extraction step")
-def main(path: str, file_mode: bool, clean_mode: bool, extract_only: bool, no_extract: bool) -> None:
+@click.option("--no-toc", is_flag=True, help="Omit table of contents")
+def main(path: str, file_mode: bool, clean_mode: bool, extract_only: bool, no_extract: bool, no_toc: bool) -> None:
     """Generate PDFs from Markdown documents with Mermaid diagram support.
 
     PATH defaults to current directory for recursive processing.
@@ -89,7 +90,7 @@ def main(path: str, file_mode: bool, clean_mode: bool, extract_only: bool, no_ex
             cwd = Path.cwd()
             rel_dir = target.parent.relative_to(cwd)
             output_dir = cwd / "pdf" / rel_dir
-            result = convert_file(target, output_dir, config_dir)
+            result = convert_file(target, output_dir, config_dir, toc=not no_toc)
             _item(">", _rel(result, target.parent))
     else:
         if not target.is_dir():
@@ -115,7 +116,8 @@ def main(path: str, file_mode: bool, clean_mode: bool, extract_only: bool, no_ex
             rel_dir = target.relative_to(cwd)
             output_dir = cwd / "pdf" / rel_dir
             converted = convert_directory(target, output_dir, config_dir,
-                on_convert=lambda p: _item(">", _rel(p, target)))
+                on_convert=lambda p: _item(">", _rel(p, target)),
+                toc=not no_toc)
             if converted == 0:
                 _item(".", "No documents found")
 
