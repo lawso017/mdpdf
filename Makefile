@@ -1,6 +1,6 @@
 .PHONY: test test-integration test-all build push install pull
 
-IMAGE := ghcr.io/lawso017/mdpdf:latest
+IMAGE ?= ghcr.io/lawso017/mdpdf:latest
 
 test: ## Run unit tests (no Docker needed)
 	uv run pytest tests/ -v --ignore=tests/test_integration.py
