@@ -131,3 +131,30 @@ def test_idempotent(workspace):
     content_after_second = (workspace / "doc.md").read_text()
 
     assert content_after_first == content_after_second
+
+
+LONG_PATHS = "\n".join(
+    f"| G-{i:02d} | Gap {i} described in enough words to wrap across a few lines of its cell. "
+    f"| `uai-infra/terraform/modules/aws/ecs/main.tf:438-556`; `silmaril-api/app/src/auth/certificate_validation_service.py:{i}` | NEW |"
+    for i in range(1, 9)
+)
+
+
+def test_layout_hardening_end_to_end(tmp_path):
+    """A document with the layouts that used to overflow passes --check, and carries its banner."""
+    (tmp_path / "doc.md").write_text(
+        '---\ntitle: "Layout"\nbanner: "DRAFT for review"\n---\n\n'
+        "## Gaps\n\n| ID | Gap | Evidence | Ticket |\n|---|---|---|---|\n" + LONG_PATHS + "\n\n"
+        "Digest `sha256:afb711a07ab3a1e0f9b26709a30b5dc8bd28a21b836c00a4713ca72947869a1e` inline.\n\n"
+        "## Wide diagram\n\n```mermaid\n%% mdpdf: landscape\nflowchart LR\n"
+        "    A[Client with a long label] --> B[Server with a long label] --> C[(Database)]\n```\n\n"
+        "Figure 1. The wide diagram, from `diagrams/doc-diagram-1.mmd`.\n\nText after the figure.\n"
+    )
+    result = _run_mdpdf(tmp_path, "--file", "doc.md", "--check")
+    assert result.returncode == 0, f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    assert "no layout problems" in result.stdout
+
+    pdf = tmp_path / "pdf" / "doc.pdf"
+    text = subprocess.run(["pdftotext", str(pdf), "-"], capture_output=True, text=True, check=True).stdout
+    assert text.count("DRAFT for review") >= 2  # every page
+    assert "Figure 1. The wide diagram" in text

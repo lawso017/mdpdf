@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-latex-recommended \
     texlive-plain-generic \
     librsvg2-bin \
+    poppler-utils \
     fontconfig \
     fonts-noto \
     fonts-noto-extra \
@@ -18,8 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && luaotfload-tool --update
 
-# Mermaid CLI
-RUN npm install -g @mermaid-js/mermaid-cli
+# Mermaid CLI, pinned: 12.x draws node shapes that rsvg-convert renders blank
+RUN npm install -g @mermaid-js/mermaid-cli@11.12.0
 
 # Puppeteer config for containerized Chromium
 RUN echo "module.exports = { \

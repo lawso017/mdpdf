@@ -4,17 +4,22 @@ from pathlib import Path
 
 from mdpdf.config import _BUNDLED_CONFIG
 
-# tspan fix: remove x= attributes from tspan elements that cause misalignment
-TSPAN_X_RE = re.compile(r'(<tspan[^>]*?) x="[^"]*"')
+SVG_OPEN_RE = re.compile(r"<svg(?![^>]*xml:space=)")
 
 
-def _fix_tspan(svg_content: str) -> str:
-    """Remove x attributes from tspan elements to fix text alignment."""
-    return TSPAN_X_RE.sub(r"\1", svg_content)
+def _prepare_svg(svg_content: str) -> str:
+    """Make mermaid's SVG render faithfully in rsvg-convert.
+
+    mermaid writes each word of a label as a <tspan> with a leading space; rsvg drops
+    that whitespace unless the document says xml:space="preserve", so words run
+    together. The tspan x= positions are kept: removing them (as earlier versions did)
+    shifts the second line of a multi-line label off centre.
+    """
+    return SVG_OPEN_RE.sub('<svg xml:space="preserve"', svg_content, count=1)
 
 
 def render_diagram(mmd_path: Path, config_dir: Path) -> Path:
-    """Render a .mmd file to PDF via mmdc → tspan fix → rsvg-convert."""
+    """Render a .mmd file to PDF via mmdc → SVG preparation → rsvg-convert."""
     mmd_path = mmd_path.resolve()
     stem = mmd_path.stem
     parent = mmd_path.parent
@@ -37,9 +42,9 @@ def render_diagram(mmd_path: Path, config_dir: Path) -> Path:
             mmdc_cmd.extend(["-p", str(puppeteer_config)])
         subprocess.run(mmdc_cmd, check=True)
 
-        # Step 2: tspan post-process
+        # Step 2: SVG preparation for rsvg
         svg_content = tmp_svg.read_text()
-        fixed_content = _fix_tspan(svg_content)
+        fixed_content = _prepare_svg(svg_content)
         fixed_svg.write_text(fixed_content)
 
         # Step 3: rsvg-convert → PDF

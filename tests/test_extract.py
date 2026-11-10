@@ -143,3 +143,29 @@ def test_extract_single_file(tmp_path):
     assert count == 1
     # b.md should be untouched
     assert "```mermaid" in (tmp_path / "b.md").read_text()
+
+
+def test_landscape_marker_adds_landscape_class(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("## Wide\n\n```mermaid\n%% mdpdf: landscape\nflowchart LR\n    A-->B\n```\n")
+    extract_file(md)
+    assert "![Wide](diagrams/doc-diagram-1.pdf){.landscape}" in md.read_text()
+    # the directive stays in the .mmd: it is a mermaid comment, harmless to render
+    assert "%% mdpdf: landscape" in (tmp_path / "diagrams" / "doc-diagram-1.mmd").read_text()
+
+
+def test_no_marker_no_landscape_class(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("## Normal\n\n```mermaid\nflowchart LR\n    A-->B\n```\n")
+    extract_file(md)
+    assert "![Normal](diagrams/doc-diagram-1.pdf)\n" in md.read_text() + "\n"
+    assert "{.landscape}" not in md.read_text()
+
+
+def test_blank_line_after_block_is_kept(tmp_path):
+    # The image must stay a paragraph of its own: merged into the next paragraph it is
+    # no longer a figure (and a landscape figure's caption can't be found).
+    md = tmp_path / "doc.md"
+    md.write_text("## D\n\n```mermaid\nflowchart LR\n    A-->B\n```\n\nFigure 1. Caption.\n")
+    extract_file(md)
+    assert "![D](diagrams/doc-diagram-1.pdf)\n\nFigure 1. Caption.\n" in md.read_text()
