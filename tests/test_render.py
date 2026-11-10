@@ -33,36 +33,6 @@ def test_render_calls_mmdc(mock_subprocess, tmp_path):
 
 
 @patch("mdpdf.render.subprocess")
-def test_render_applies_tspan_fix(mock_subprocess, tmp_path):
-    mmd = tmp_path / "diagram.mmd"
-    mmd.write_text("graph TD\n    A-->B\n")
-    config_dir = tmp_path / "config"
-    config_dir.mkdir()
-    (config_dir / "mermaid.config.json").write_text("{}")
-
-    svg_path = tmp_path / "diagram-tmp.svg"
-
-    def create_svg(*args, **kwargs):
-        cmd = args[0]
-        if "mmdc" in cmd[0]:
-            svg_path.write_text(
-                '<svg><text><tspan x="10" dy="1em">hello</tspan></text></svg>'
-            )
-        return MagicMock(returncode=0)
-
-    mock_subprocess.run.side_effect = create_svg
-
-    render_diagram(mmd, config_dir)
-
-    # The fixed SVG should have been written
-    fixed_svg = tmp_path / "diagram-fixed.svg"
-    if fixed_svg.exists():
-        content = fixed_svg.read_text()
-        # tspan x attribute should be removed (the fix)
-        assert 'x="10"' not in content or True  # Verify fix was attempted
-
-
-@patch("mdpdf.render.subprocess")
 def test_render_calls_rsvg_convert(mock_subprocess, tmp_path):
     mmd = tmp_path / "diagram.mmd"
     mmd.write_text("graph TD\n    A-->B\n")
@@ -131,3 +101,24 @@ def test_render_all_finds_mmd_files(mock_render, tmp_path):
     count = render_all_diagrams(tmp_path, config_dir)
     assert count == 3
     assert mock_render.call_count == 3
+
+
+from mdpdf.render import _prepare_svg
+
+
+def test_prepare_svg_keeps_tspan_positions():
+    # Removing tspan x= shifted second lines of multi-line labels off centre.
+    svg = '<svg width="10"><text><tspan x="10" dy="1em">a</tspan><tspan x="10" dy="1em">b</tspan></text></svg>'
+    assert _prepare_svg(svg).count('x="10"') == 2
+
+
+def test_prepare_svg_preserves_spaces_between_words():
+    # mermaid puts a leading space in each word's tspan; rsvg drops it without xml:space.
+    out = _prepare_svg('<?xml version="1.0"?><svg id="m" width="10"><text/></svg>')
+    assert out.count('xml:space="preserve"') == 1
+    assert '<svg xml:space="preserve" id="m"' in out
+
+
+def test_prepare_svg_is_idempotent():
+    once = _prepare_svg('<svg id="m"></svg>')
+    assert _prepare_svg(once) == once
