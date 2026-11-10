@@ -4,11 +4,15 @@ from pathlib import Path
 from mdpdf.naming import to_kebab
 
 MERMAID_BLOCK_RE = re.compile(
-    r"^```mermaid\s*\n(.*?)^```\s*$",
+    r"^```mermaid[ \t]*\n(.*?)^```[ \t]*$",
     re.MULTILINE | re.DOTALL,
 )
 
 HEADING_RE = re.compile(r"^#{1,6}\s+(.+)$", re.MULTILINE)
+
+# A mermaid comment inside the block asks for a landscape page. Being a comment, it is
+# ignored by mermaid itself (and by GitHub's rendering of the block).
+LANDSCAPE_RE = re.compile(r"^\s*%%\s*mdpdf:\s*landscape\s*$", re.MULTILINE)
 
 
 def _find_preceding_heading(text: str, block_start: int) -> str | None:
@@ -51,6 +55,8 @@ def extract_file(path: Path) -> int:
 
         # Replace block with image reference
         pdf_ref = f"![{alt_text}](diagrams/{doc_stem}-diagram-{idx}.pdf)"
+        if LANDSCAPE_RE.search(mermaid_content):
+            pdf_ref += "{.landscape}"
         content = content[:match.start()] + pdf_ref + content[match.end():]
         count += 1
 

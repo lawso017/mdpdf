@@ -1,0 +1,35 @@
+% mdpdf-core.tex: definitions the bundled Lua filter (filters/mdpdf.lua) relies on.
+% mdpdf always includes this before the style header (the bundled pandoc-header.tex or a
+% project's .config/pandoc-header.tex), so a project header cannot leave them out.
+
+% Landscape pages for wide figures, queued so the text keeps flowing (filter part 4).
+% graphicx first: pandoc loads it only when the document has images, and a landscape
+% figure is raw LaTeX by then; pdflscape's own `graphics` would take \includegraphics
+% options as bounding-box numbers ("Missing number" at width=).
+\usepackage{graphicx}
+\usepackage{pdflscape}
+\usepackage{afterpage}
+% Page furniture such as the front-matter banner.
+\usepackage{eso-pic}
+
+% \needspace{<length>}: start a new page unless <length> of space is left on this one,
+% so a heading is not stranded at the foot of a page (filter part 2). needspace.sty is
+% in texlive-latex-extra, which the image leaves out. This is its strict \Needspace,
+% which measures the space left (\pagegoal - \pagetotal). Its glue-based \needspace
+% made longtable repeat a table's header alone at the top of a page.
+\makeatletter
+\providecommand{\needspace}[1]{%
+  \par\penalty-100
+  \begingroup
+    \setlength{\dimen@}{#1}%
+    \dimen@ii\pagegoal \advance\dimen@ii-\pagetotal
+    \ifdim\dimen@>\dimen@ii
+      \ifdim\dimen@ii>\z@ \vfil\fi
+      \break
+    \fi
+  \endgroup}
+\makeatother
+
+% Let a line holding long inline code stretch rather than overflow the margin.
+\setlength{\emergencystretch}{3em}
+\tolerance=2000

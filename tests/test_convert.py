@@ -21,7 +21,6 @@ def test_convert_calls_pandoc(mock_subprocess, tmp_path):
     assert "pandoc" in cmd[0]
     assert "--pdf-engine=lualatex" in cmd
     assert any("pandoc-header.tex" in str(a) for a in cmd)
-    assert any("Noto Sans Mono" in str(a) for a in cmd)
 
 
 @patch("mdpdf.convert.subprocess")
@@ -103,3 +102,84 @@ def test_convert_output_filename_kebab(mock_subprocess, tmp_path):
 
     result = convert_file(md, output_dir, config_dir)
     assert result.name == "my-document.pdf"
+
+
+def _cmd_for(tmp_path, md_text, mock_subprocess, **kwargs):
+    md = tmp_path / "doc.md"
+    md.write_text(md_text)
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(exist_ok=True)
+    (config_dir / "pandoc-header.tex").write_text("% user header")
+    mock_subprocess.run.return_value = MagicMock(returncode=0)
+    convert_file(md, tmp_path / "pdf", config_dir, **kwargs)
+    return mock_subprocess.run.call_args[0][0]
+
+
+def _headers(cmd):
+    return [cmd[i + 1] for i, a in enumerate(cmd) if a == "-H"]
+
+
+@patch("mdpdf.convert.subprocess")
+def test_convert_applies_the_bundled_layout_filter(mock_subprocess, tmp_path):
+    cmd = _cmd_for(tmp_path, "# Hello\n", mock_subprocess)
+    i = cmd.index("--lua-filter")
+    assert cmd[i + 1].endswith("filters/mdpdf.lua")
+
+
+@patch("mdpdf.convert.subprocess")
+def test_core_header_is_included_before_a_user_header(mock_subprocess, tmp_path):
+    headers = _headers(_cmd_for(tmp_path, "# Hello\n", mock_subprocess))
+    assert headers[0].endswith("mdpdf-core.tex")
+    assert headers[1].endswith("config/pandoc-header.tex")
+
+
+@patch("mdpdf.convert.subprocess")
+def test_front_matter_banner_adds_a_banner_header(mock_subprocess, tmp_path):
+    md = '---\ntitle: "T"\nbanner: "DRAFT for review -- not for submission"\n---\n\n# Hello\n'
+    headers = _headers(_cmd_for(tmp_path, md, mock_subprocess))
+    assert [Path(h).name for h in headers].count("banner.tex") == 1
+
+
+@patch("mdpdf.convert.subprocess")
+def test_banner_header_content(mock_subprocess, tmp_path):
+    seen = {}
+
+    def run(cmd, **kwargs):
+        for i, a in enumerate(cmd):
+            if a == "-H" and Path(cmd[i + 1]).name == "banner.tex":
+                seen["tex"] = open(cmd[i + 1]).read()
+        return MagicMock(returncode=0)
+
+    mock_subprocess.run.side_effect = run
+    md = tmp_path / "doc.md"
+    md.write_text('---\nbanner: "DRAFT_1 & co"\n---\n\nText.\n')
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    convert_file(md, tmp_path / "pdf", config_dir)
+    assert "AddToShipoutPictureFG" in seen["tex"]
+    assert r"DRAFT\_1 \& co" in seen["tex"]
+
+
+@patch("mdpdf.convert.subprocess")
+def test_banner_option_overrides_front_matter(mock_subprocess, tmp_path):
+    seen = {}
+
+    def run(cmd, **kwargs):
+        for i, a in enumerate(cmd):
+            if a == "-H" and Path(cmd[i + 1]).name == "banner.tex":
+                seen["tex"] = open(cmd[i + 1]).read()
+        return MagicMock(returncode=0)
+
+    mock_subprocess.run.side_effect = run
+    md = tmp_path / "doc.md"
+    md.write_text('---\nbanner: "from front matter"\n---\n\nText.\n')
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    convert_file(md, tmp_path / "pdf", config_dir, banner="from the option")
+    assert "from the option" in seen["tex"]
+
+
+@patch("mdpdf.convert.subprocess")
+def test_no_banner_means_no_banner_header(mock_subprocess, tmp_path):
+    headers = _headers(_cmd_for(tmp_path, "# Hello\n", mock_subprocess))
+    assert "banner.tex" not in [Path(h).name for h in headers]

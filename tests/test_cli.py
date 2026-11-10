@@ -159,3 +159,61 @@ def test_invalid_path():
     runner = CliRunner()
     result = runner.invoke(main, ["--file", "/nonexistent/path/file.md"])
     assert result.exit_code != 0
+
+
+@patch("mdpdf.cli.convert_file")
+@patch("mdpdf.cli.render_all_diagrams")
+@patch("mdpdf.cli.extract_file")
+@patch("mdpdf.cli.find_config")
+def test_banner_option_is_passed_to_convert(mock_config, mock_extract, mock_render, mock_convert, tmp_path, monkeypatch):
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc\n")
+    monkeypatch.chdir(tmp_path)
+    mock_config.return_value = tmp_path
+    mock_extract.return_value = 0
+    mock_convert.return_value = tmp_path / "pdf" / "doc.pdf"
+    result = CliRunner().invoke(main, ["--file", str(md), "--banner", "DRAFT"])
+    assert result.exit_code == 0, result.output
+    assert mock_convert.call_args.kwargs["banner"] == "DRAFT"
+
+
+@patch("mdpdf.cli.check_pdf")
+@patch("mdpdf.cli.convert_file")
+@patch("mdpdf.cli.render_all_diagrams")
+@patch("mdpdf.cli.extract_file")
+@patch("mdpdf.cli.find_config")
+def test_check_option_fails_when_layout_problems_are_found(
+    mock_config, mock_extract, mock_render, mock_convert, mock_check, tmp_path, monkeypatch
+):
+    from mdpdf.check import Problem
+
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc\n")
+    monkeypatch.chdir(tmp_path)
+    mock_config.return_value = tmp_path
+    mock_extract.return_value = 0
+    mock_convert.return_value = tmp_path / "pdf" / "doc.pdf"
+    mock_check.return_value = [Problem(3, "past margin", "modules/aws/very/long/path")]
+    result = CliRunner().invoke(main, ["--file", str(md), "--check"])
+    assert result.exit_code == 1
+    assert "p3" in result.output and "past margin" in result.output
+
+
+@patch("mdpdf.cli.check_pdf")
+@patch("mdpdf.cli.convert_file")
+@patch("mdpdf.cli.render_all_diagrams")
+@patch("mdpdf.cli.extract_file")
+@patch("mdpdf.cli.find_config")
+def test_check_option_passes_a_clean_document(
+    mock_config, mock_extract, mock_render, mock_convert, mock_check, tmp_path, monkeypatch
+):
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc\n")
+    monkeypatch.chdir(tmp_path)
+    mock_config.return_value = tmp_path
+    mock_extract.return_value = 0
+    mock_convert.return_value = tmp_path / "pdf" / "doc.pdf"
+    mock_check.return_value = []
+    result = CliRunner().invoke(main, ["--file", str(md), "--check"])
+    assert result.exit_code == 0, result.output
+    assert "no layout problems" in result.output
